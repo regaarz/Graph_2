@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>Realtime Monitoring</title>
+    <script src="https://www.gstatic.com/charts/loader.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.6.8/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.6.8/firebase-database.js"></script>
+    <style>
+        body {
+            margin: 0;
+            padding: 20px;
+            font-family: 'Segoe UI', sans-serif;
+            background-color: #1E441E;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 20px;
+        }
+
+        .card {
+            width: 90%;
+            max-width: 600px;
+            background-color: #fff;
+            border-radius: 20px;
+            padding: 16px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+        }
+
+        .chart-title {
+            font-size: 18px;
+            font-weight: bold;
+            text-align: center;
+            margin-bottom: 12px;
+            color: #333;
+        }
+
+        .chart-container {
+            width: 100%;
+            height: 300px;
+        }
+    </style>
+
+    <script>
+        // Konfigurasi Firebase kamu
+        var firebaseConfig = {
+            apiKey: "AIzaSyCmXn0Mt6d0I07q7lf2agk0zmASptR5aIY",
+            authDomain: "tongsampah-fb84c.firebaseapp.com",
+            databaseURL: "https://tongsampah-fb84c-default-rtdb.firebaseio.com/",
+            projectId: "tongsampah-fb84c"
+        };
+        firebase.initializeApp(firebaseConfig);
+        var database = firebase.database();
+
+        google.charts.load('current', { packages: ['corechart'] });
+        google.charts.setOnLoadCallback(drawCharts);
+
+        let organikData = [['Waktu', 'Organik']];
+        let anorganikData = [['Waktu', 'Anorganik']];
+        let B3Data = [['Waktu', 'B3']];
+
+        function drawCharts() {
+            const organikChart = new google.visualization.LineChart(document.getElementById('organik_chart'));
+            const anorganikChart = new google.visualization.LineChart(document.getElementById('anorganik_chart'));
+            const B3Chart = new google.visualization.LineChart(document.getElementById('B3_chart'));
+
+            setInterval(() => {
+                const now = new Date();
+                const timeStr = now.toTimeString().split(' ')[0]; // "HH:MM:SS"
+
+                database.ref('/Tongsampah2').once('value', snapshot => {
+                    const val = snapshot.val();
+                    if (!val) return;
+
+                    const organik = Number(val.organik || 0);
+                    const anorganik = Number(val.anorganik || 0);
+                    const B3 = Number(val.B3 || 0);
+
+                    organikData.push([timeStr, organik]);
+                    anorganikData.push([timeStr, anorganik]);
+                    B3Data.push([timeStr, B3]);
+
+                    if (organikData.length > 600) organikData.splice(1, 1);
+                    if (anorganikData.length > 600) anorganikData.splice(1, 1);
+                    if (B3Data.length > 600) B3Data.splice(1, 1);
+
+                    organikChart.draw(google.visualization.arrayToDataTable(organikData), {
+                        title: '',
+                        legend: { position: 'none' },
+                        curveType: 'function',
+                        colors: ['#FF9800'],
+                        hAxis: { textStyle: { fontSize: 10 } },
+                        vAxis: { minValue: 0 }
+                    });
+
+                    anorganikChart.draw(google.visualization.arrayToDataTable(anorganikData), {
+                        title: '',
+                        legend: { position: 'none' },
+                        curveType: 'function',
+                        colors: ['#F44336'],
+                        hAxis: { textStyle: { fontSize: 10 } },
+                        vAxis: { minValue: 0 }
+                    });
+
+                    B3Chart.draw(google.visualization.arrayToDataTable(B3Data), {
+                        title: '',
+                        legend: { position: 'none' },
+                        curveType: 'function',
+                        colors: ['#2196F3'],
+                        hAxis: { textStyle: { fontSize: 10 } },
+                        vAxis: { minValue: 0 }
+                    });
+                });
+            }, 1000);
+        }
+    </script>
+</head>
+
+<body>
+    
+    <div class="card">
+        <div class="chart-title">GRAFIK ORGANIK</div>
+        <div id="organik_chart" class="chart-container"></div>
+    </div>
+
+    <div class="card">
+        <div class="chart-title">GRAFIK ANORGANIK</div>
+        <div id="anorganik_chart" class="chart-container"></div>
+    </div>
+
+    <div class="card">
+        <div class="chart-title">GRAFIK B3</div>
+        <div id="B3_chart" class="chart-container"></div>
+    </div>
+</body>
+
+</html>
